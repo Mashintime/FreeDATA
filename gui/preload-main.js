@@ -1468,6 +1468,7 @@ document.getElementById('hamlib_rigctld_stop').addEventListener('click', () => {
 
 ipcRenderer.on('action-update-tnc-state', (event, arg) => {
     // update FFT
+    // This is the heavy lifter, should be as optimized as possible
     if (typeof(arg.fft) !== 'undefined') {
         var array = JSON.parse("[" + arg.fft + "]");
         spectrum.addData(array[0]);
@@ -1476,13 +1477,16 @@ ipcRenderer.on('action-update-tnc-state', (event, arg) => {
 
     if (typeof(arg.mycallsign) !== 'undefined') {
         // split document title by looking for Call then split and update it
+        //Updating document title is very expensive; only update on changes about 20x faster
         var documentTitle = document.title.split('Call:')
-        document.title = documentTitle[0] + 'Call: ' + arg.mycallsign;
+        if (document.title != documentTitle[0] + 'Call: ' + arg.mycallsign)
+            document.title = documentTitle[0] + 'Call: ' + arg.mycallsign;
     }
 
     // update mygrid information with data from tnc
     if (typeof(arg.mygrid) !== 'undefined') {
-        document.getElementById("myGrid").value = arg.mygrid;
+        updateElement("text","myGrid",arg.myGrid);
+        //document.getElementById("myGrid").value = arg.mygrid;
     }
 
     // DATA STATE
@@ -1677,6 +1681,22 @@ var speedChartOptions = {
     // END OF SPEED CHART
 
     // PTT STATE
+    // Switch is supposed to be faster than if elseif else
+    switch (arg.ptt_state){
+        case 'True':
+            updateElement("class","ptt_state","btn btn-sm btn-danger")
+            //document.getElementById("ptt_state").className = "btn btn-sm btn-danger";    
+            break;
+        case 'False':
+            updateElement("class","ptt_state","btn btn-sm btn-success")
+            //document.getElementById("ptt_state").className = "btn btn-sm btn-success";
+            break;
+        default:
+            updateElement("class","ptt_state","btn btn-sm btn-secondary")
+            //document.getElementById("ptt_state").className = "btn btn-sm btn-secondary";
+            break;
+    }
+    /*
     if (arg.ptt_state == 'True') {
         document.getElementById("ptt_state").className = "btn btn-sm btn-danger";
     } else if (arg.ptt_state == 'False') {
@@ -1684,24 +1704,35 @@ var speedChartOptions = {
     } else {
         document.getElementById("ptt_state").className = "btn btn-sm btn-secondary";
     }
-
+    */
     // AUDIO RECORDING
     if (arg.audio_recording == 'True') {
-        document.getElementById("startStopRecording").className = "btn btn-sm btn-danger";
-        document.getElementById("startStopRecording").innerHTML = "Stop Rec"
+        //document.getElementById("startStopRecording").className = "btn btn-sm btn-danger";
+        updateElement("text","startStopRecording","Stop Rec");
+        //document.getElementById("startStopRecording").textContent = "Stop Rec"
     } else if (arg.ptt_state == 'False') {
-        document.getElementById("startStopRecording").className = "btn btn-sm btn-danger";
-        document.getElementById("startStopRecording").innerHTML = "Start Rec"
+        //document.getElementById("startStopRecording").className = "btn btn-sm btn-danger";
+        updateElement("text","startStopRecording","Start Rec");
+        //document.getElementById("startStopRecording").textContent = "Start Rec"
     } else {
-        document.getElementById("startStopRecording").className = "btn btn-sm btn-danger";
-        document.getElementById("startStopRecording").innerHTML = "Start Rec"
+        //document.getElementById("startStopRecording").className = "btn btn-sm btn-danger";
+        updateElement("text","startStopRecording","Start Rec");
+        //document.getElementById("startStopRecording").textContent = "Start Rec"
     }
 
-
-
-
-
     // CHANNEL BUSY STATE
+    switch (arg.channel_busy){
+        case 'True':
+            updateElement("class","channel_busy","btn btn-sm btn-danger")
+            break;
+        case 'False':
+            updateElement("class","channel_busy","btn btn-sm btn-success")
+            break;
+        default:
+            updateElement("class","channel_busy","btn btn-sm btn-secondary")
+            break;
+    }
+    /*
     if (arg.channel_busy == 'True') {
         document.getElementById("channel_busy").className = "btn btn-sm btn-danger";
 
@@ -1712,8 +1743,22 @@ var speedChartOptions = {
         document.getElementById("channel_busy").className = "btn btn-sm btn-secondary";
 
     }
-
+    */
     // BUSY STATE
+    switch (arg.busy_state){
+        case 'BUSY':
+            updateElement("class","busy_state","btn btn-sm btn-danger");
+            updateElement("disable","startTransmission",true);
+            break;
+        case 'IDLE':
+            updateElement("class","busy_state","btn btn-sm btn-success");
+            break;
+        default:
+            updateElement("class","busy_state","btn btn-sm btn-secondary");
+            updateElement("disable","startTransmission",true);
+            break;
+    }
+    /*
     if (arg.busy_state == 'BUSY') {
         document.getElementById("busy_state").className = "btn btn-sm btn-danger";
         
@@ -1728,8 +1773,23 @@ var speedChartOptions = {
         document.getElementById("startTransmission").disabled = true;
         //document.getElementById("stopTransmission").disabled = false;
     }
-
+    */
     // ARQ STATE
+    switch (arg.arq_state){
+        case 'True':
+            updateElement("class","arq_state","btn btn-sm btn-warning");
+            updateElement("disable","startTransmission",false);
+            break;
+        case 'False':
+            updateElement("class","arq_state","btn btn-sm btn-secondary");
+            updateElement("disable","startTransmission",false);
+            break;
+        default:
+            updateElement("class","arq_state","btn btn-sm btn-secondary");
+            updateElement("disable","startTransmission",false);
+            break;
+    }
+    /*
     if (arg.arq_state == 'True') {
         document.getElementById("arq_state").className = "btn btn-sm btn-warning";
         //document.getElementById("startTransmission").disabled = true;
@@ -1745,8 +1805,20 @@ var speedChartOptions = {
         document.getElementById("startTransmission").disabled = false;
         //document.getElementById("stopTransmission").disabled = false;
     }
-
+    */
     // ARQ SESSION
+    switch (arg.arq_session){
+        case 'True':
+            updateElement("class","arq_session","btn btn-sm btn-warning");
+            break;
+        case 'False':
+            updateElement("class","arq_session","btn btn-sm btn-secondary");
+            break;
+        default:
+            updateElement("class","arq_session","btn btn-sm btn-secondary");
+            break;
+    }
+    /*
     if (arg.arq_session == 'True') {
         document.getElementById("arq_session").className = "btn btn-sm btn-warning";
 
@@ -1757,18 +1829,40 @@ var speedChartOptions = {
         document.getElementById("arq_session").className = "btn btn-sm btn-secondary";
 
     }
-
+    */
     // HAMLIB STATUS
     if (arg.hamlib_status == 'connected') {
-        document.getElementById("rigctld_state").className = "btn btn-success btn-sm";
-
+        //document.getElementById("rigctld_state").className = "btn btn-success btn-sm";
+        updateElement("class","rigctld_state","btn btn-sm btn-success");
     } else {
-        document.getElementById("rigctld_state").className = "btn btn-secondary btn-sm";
+        //document.getElementById("rigctld_state").className = "btn btn-secondary btn-sm";
+        updateElement("class","rigctld_state","btn btn-sm btn-secondary");
     }
 
 
 
     // BEACON STATE
+    switch (arg.beacon_state){
+        case 'True':
+            updateElement("class","startBeacon","btn btn-sm btn-success spinner-grow");
+            updateElement("disable","startBeacon",true);
+            updateElement("disable","beaconInterval",true);
+            updateElement("disable","stopBeacon",false);
+            break;
+        case 'False':
+            updateElement("class","startBeacon","btn btn-sm btn-success");
+            updateElement("disable","startBeacon",false);
+            updateElement("disable","beaconInterval",false);
+            updateElement("disable","stopBeacon",true);
+            break;
+        default:
+            updateElement("class","startBeacon","btn btn-sm btn-success");
+            updateElement("disable","startBeacon",false);
+            updateElement("disable","beaconInterval",false);
+            updateElement("disable","stopBeacon",true);
+            break;
+    }
+    /*
     if (arg.beacon_state == 'True') {
         document.getElementById("startBeacon").className = "btn btn-sm btn-success spinner-grow";
         document.getElementById("startBeacon").disabled = true;
@@ -1785,36 +1879,41 @@ var speedChartOptions = {
         document.getElementById("stopBeacon").disabled = true;
         document.getElementById("beaconInterval").disabled = false;
     }
+    */
     // dbfs
     // https://www.moellerstudios.org/converting-amplitude-representations/
     if (dbfs_level_raw != arg.dbfs_level){
         dbfs_level_raw = arg.dbfs_level
         dbfs_level = Math.pow(10, arg.dbfs_level / 20) * 100
-
-        document.getElementById("dbfs_level_value").innerHTML = Math.round(arg.dbfs_level) + ' dBFS'
-        document.getElementById("dbfs_level").setAttribute("aria-valuenow", dbfs_level);
-        document.getElementById("dbfs_level").setAttribute("style", "width:" + dbfs_level + "%;");
+        updateElement("text","dbfs_level_value",Math.round(arg.dbfs_level) + ' dBFS')
+        //document.getElementById("dbfs_level_value").innerHTML = Math.round(arg.dbfs_level) + ' dBFS'
+        updateElementAttr("dbfs_level","aria-valuenow",dbfs_level);
+        updateElementAttr("dbfs_level","style","width:" + dbfs_level + "%;");
+        //document.getElementById("dbfs_level").setAttribute("aria-valuenow", dbfs_level);
+        //document.getElementById("dbfs_level").setAttribute("style", "width:" + dbfs_level + "%;");
     }
 
     // SET FREQUENCY
     // https://stackoverflow.com/a/2901298
-    var freq = arg.frequency.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    document.getElementById("frequency").innerHTML = freq;
+    //var freq = arg.frequency.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    updateElement("text","frequency",arg.frequency.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."));
+    //document.getElementById("frequency").innerHTML = freq;
     //document.getElementById("newFrequency").value = arg.frequency;
 
     // SET MODE
-    document.getElementById("mode").innerHTML = arg.mode;
-
+    //document.getElementById("mode").innerHTML = arg.mode;
+    updateElement("text","mode",arg.mode);
     // SET bandwidth
-    document.getElementById("bandwidth").innerHTML = arg.bandwidth;
-
+    //document.getElementById("bandwidth").innerHTML = arg.bandwidth;
+    updateElement("text","bandwidth",arg.bandwidth);
     // SET BYTES PER MINUTE
     if (typeof(arg.arq_bytes_per_minute) == 'undefined') {
         var arq_bytes_per_minute = 0;
     } else {
         var arq_bytes_per_minute = arg.arq_bytes_per_minute;
     }
-    document.getElementById("bytes_per_min").innerHTML = arq_bytes_per_minute;
+    updateElement("text","bytes_per_min",arq_bytes_per_minute);
+    //document.getElementById("bytes_per_min").innerHTML = arq_bytes_per_minute;
 
     // SET BYTES PER MINUTE COMPRESSED
     if (typeof(arg.arq_bytes_per_minute) == 'undefined') {
@@ -1822,7 +1921,8 @@ var speedChartOptions = {
     } else {
         var arq_bytes_per_minute_compressed = Math.round(arg.arq_bytes_per_minute * arg.arq_compression_factor);
     }
-    document.getElementById("bytes_per_min_compressed").innerHTML = arq_bytes_per_minute_compressed;
+    updateElement("text","bytes_per_min_compressed",arq_bytes_per_minute_compressed);
+    //document.getElementById("bytes_per_min_compressed").innerHTML = arq_bytes_per_minute_compressed;
 
     // SET TIME LEFT UNTIL FINIHED
     if (typeof(arg.arq_seconds_until_finish) == 'undefined') {
@@ -1844,12 +1944,27 @@ var speedChartOptions = {
         }
         var time_left = "time left: ~ "+ minutes + "min" + " " + seconds + "s";
     }
-    document.getElementById("transmission_timeleft").innerHTML = time_left;
-
-
+    updateElement("text","transmission_timeleft",time_left);
+    //document.getElementById("transmission_timeleft").innerHTML = time_left;
     
     // SET SPEED LEVEL
-
+    switch (arg.speed_level) {
+        case 0:
+            updateElement("class","speed_level","bi bi-reception-1");
+            break;
+        case 1:
+            updateElement("class","speed_level","bi bi-reception-2");
+            break;
+        case 3:
+            updateElement("class","speed_level","bi bi-reception-3");
+            break;
+        default:
+            updateElement("class","speed_level","bi bi-reception-4");
+            break;
+        
+    
+    }
+    /*
     if(arg.speed_level >= 0) {
         document.getElementById("speed_level").className = "bi bi-reception-1";
     }
@@ -1865,7 +1980,7 @@ var speedChartOptions = {
     if(arg.speed_level >= 4) {
         document.getElementById("speed_level").className = "bi bi-reception-4";
     }
-
+    */
     
     
     
@@ -1875,9 +1990,12 @@ var speedChartOptions = {
     } else {
         var total_bytes = arg.total_bytes;
     }
-    document.getElementById("total_bytes").innerHTML = total_bytes;
-    document.getElementById("transmission_progress").setAttribute("aria-valuenow", arg.arq_transmission_percent);
-    document.getElementById("transmission_progress").setAttribute("style", "width:" + arg.arq_transmission_percent + "%;");
+    updateElement("text","total_bytes",total_bytes);
+    //document.getElementById("total_bytes").innerHTML = total_bytes;
+    updateElementAttr("transmission_progress","aria-valuenow",arq.arq_transmission_percent);
+    updateElementAttr("transmission_progress","aria-style","width:" + arg.arq_transmission_percent + "%;");
+    //document.getElementById("transmission_progress").setAttribute("aria-valuenow", arg.arq_transmission_percent);
+    //document.getElementById("transmission_progress").setAttribute("style", "width:" + arg.arq_transmission_percent + "%;");
 
     // UPDATE HEARD STATIONS
     var tbl = document.getElementById("heardstations");
@@ -1897,14 +2015,14 @@ var speedChartOptions = {
             var myGrid = document.getElementById("myGrid").value;
             try {
                 var dist = parseInt(distance(myGrid, dxGrid)) + ' km';
-                document.getElementById("pingDistance").innerHTML = dist;
-                document.getElementById("dataModalPingDistance").innerHTML = dist;
+                document.getElementById("pingDistance").textContent = dist;
+                document.getElementById("dataModalPingDistance").textContent = dist;
             } catch {
-                document.getElementById("pingDistance").innerHTML = '---';
-                document.getElementById("dataModalPingDistance").innerHTML = '---';
+                document.getElementById("pingDistance").textContent = '---';
+                document.getElementById("dataModalPingDistance").textContent = '---';
             }
-            document.getElementById("pingDB").innerHTML = arg.stations[i]['snr'];
-            document.getElementById("dataModalPingDB").innerHTML = arg.stations[i]['snr'];
+            document.getElementById("pingDB").textContent = arg.stations[i]['snr'];
+            document.getElementById("dataModalPingDB").textContent = arg.stations[i]['snr'];
         }
 
         // now we update the heard stations list
@@ -2719,3 +2837,30 @@ function checkRigctld(){
 ipcRenderer.on('action-check-rigctld', (event, data) => {
         document.getElementById("hamlib_rigctld_status").value = data["state"];
 });
+
+//Changing stuff is expensive, check if it differs before updating
+function updateElement(type, control,value)
+{
+    switch (type){
+        case "class":
+            if (document.getElementById(control).className != value)
+            document.getElementById(control).className = value;
+            break;
+        case "text":
+            if (document.getElementById(control).textContent != value)
+            document.getElementById(control).textContent = value;
+            break;
+        case "disable":
+            if (document.getElementById(control).disabled != value)
+            document.getElementById(control).disabled = value;
+            break;
+        default:
+            console.log("Got undefined type in updateClass: " + type);
+            break;
+    }
+
+}
+function updateElementAttr(control, attrib, value) {
+    if (document.getElementById(control).getAttribute(attrib) != value)
+        document.getElementById(control).setAttribute(attrib,value);
+}
