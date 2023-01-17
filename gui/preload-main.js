@@ -1992,23 +1992,22 @@ var speedChartOptions = {
     }
     updateElement("text","total_bytes",total_bytes);
     //document.getElementById("total_bytes").innerHTML = total_bytes;
-    updateElementAttr("transmission_progress","aria-valuenow",arq.arq_transmission_percent);
+    updateElementAttr("transmission_progress","aria-valuenow",arg.arq_transmission_percent);
     updateElementAttr("transmission_progress","aria-style","width:" + arg.arq_transmission_percent + "%;");
     //document.getElementById("transmission_progress").setAttribute("aria-valuenow", arg.arq_transmission_percent);
     //document.getElementById("transmission_progress").setAttribute("style", "width:" + arg.arq_transmission_percent + "%;");
 
     // UPDATE HEARD STATIONS
     var tbl = document.getElementById("heardstations");
-    document.getElementById("heardstations").innerHTML = '';
-
     if (typeof(arg.stations) == 'undefined') {
         var heardStationsLength = 0;
     } else {
         var heardStationsLength = arg.stations.length;
+        tbl.innerHTML = "";
+        //document.getElementById("heardstations").innerHTML = '';
     }
 
     for (i = 0; i < heardStationsLength; i++) {
-
         // first we update the PING window
         if (arg.stations[i]['dxcallsign'] == document.getElementById("dxCall").value) {
             var dxGrid = arg.stations[i]['dxgrid'];
