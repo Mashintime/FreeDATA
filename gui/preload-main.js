@@ -1464,34 +1464,47 @@ document.getElementById('hamlib_rigctld_stop').addEventListener('click', () => {
             };
             ipcRenderer.send('request-show-chat-window', Data);    
     })
+});
 
+//Make these global, otherwise gets recreated everytime waterfall draws
 
-    
-    
-    
-    
-
-  
-})
-
-  
-
+const speedChartOptions = {
+    responsive: true,
+    animations: true,
+    cubicInterpolationMode: 'monotone',
+    tension: 0.4,
+    scales: {
+      SNR:{
+        type: 'linear',
+        ticks: { beginAtZero: true, color: 'rgb(255, 99, 132)' },
+        position: 'right',
+      },
+      SPEED :{
+        type: 'linear',
+        ticks: { beginAtZero: true, color: 'rgb(120, 100, 120)' },
+        position: 'left',
+        grid: {
+            drawOnChartArea: false, // only want the grid lines for one axis to show up
+        },
+      },
+      x: { ticks: { beginAtZero: true } },
+    }
+}
 
 ipcRenderer.on('action-update-tnc-state', (event, arg) => {
-    // update FFT
     // This is the heavy lifter, should be as optimized as possible
+    // update FFT
     if (typeof(arg.fft) !== 'undefined') {
         var array = JSON.parse("[" + arg.fft + "]");
         spectrum.addData(array[0]);
-
     }
 
     if (typeof(arg.mycallsign) !== 'undefined') {
         // split document title by looking for Call then split and update it
         //Updating document title is very expensive; only update on changes about 20x faster
-        var documentTitle = document.title.split('Call:')
-        if (document.title != documentTitle[0] + 'Call: ' + arg.mycallsign)
-            document.title = documentTitle[0] + 'Call: ' + arg.mycallsign;
+        //var documentTitle = 
+        if (document.title != document.title.split('Call:')[0] + 'Call: ' + arg.mycallsign)
+            document.title = document.title.split('Call:')[0] + 'Call: ' + arg.mycallsign;
     }
 
     // update mygrid information with data from tnc
@@ -1505,61 +1518,61 @@ ipcRenderer.on('action-update-tnc-state', (event, arg) => {
 
 
     // START OF SCATTER CHART
-
+    
     const scatterConfig = {
-                plugins: {
-                    legend: {
-                        display: false,
-                        },
-                    tooltip: {
-                        enabled: false
-                    },
-                    
-                    annotation: {
-                        annotations: {
-                            line1: {
-                              type: 'line',
-                              yMin: 0,
-                              yMax: 0,
-                              borderColor: 'rgb(255, 99, 132)',
-                              borderWidth: 2,
-                            },
-                            line2: {
-                              type: 'line',
-                              xMin: 0,
-                              xMax: 0,
-                              borderColor: 'rgb(255, 99, 132)',
-                              borderWidth: 2,
-                            }
-                         }   
-                     },   
-        
-        
-        
+        plugins: {
+            legend: {
+                display: false,
                 },
-                animations: false,
-                scales: {
-                    x: {
-                        type: 'linear',
-                        position: 'bottom',
-                        display: true,
-                        min: -80,
-                        max: 80,
-                        ticks: {
-                            display: false
-                        }            
+            tooltip: {
+                enabled: false
+            },
+            
+            annotation: {
+                annotations: {
+                    line1: {
+                      type: 'line',
+                      yMin: 0,
+                      yMax: 0,
+                      borderColor: 'rgb(255, 99, 132)',
+                      borderWidth: 2,
                     },
-                    y: {
-                    
-                        display: true,
-                        min: -80,
-                        max: 80,
-                        ticks: {
-                            display: false,
-                        }
+                    line2: {
+                      type: 'line',
+                      xMin: 0,
+                      xMax: 0,
+                      borderColor: 'rgb(255, 99, 132)',
+                      borderWidth: 2,
                     }
+                 }   
+             },   
+    
+    
+    
+        },
+        animations: false,
+        scales: {
+            x: {
+                type: 'linear',
+                position: 'bottom',
+                display: true,
+                min: -80,
+                max: 80,
+                ticks: {
+                    display: false
+                }            
+            },
+            y: {
+    
+                display: true,
+                min: -80,
+                max: 80,
+                ticks: {
+                    display: false,
                 }
+            }
         }
+    }
     var scatterData = arg.scatter
     var newScatterData = {
         datasets: [{
@@ -1576,21 +1589,21 @@ ipcRenderer.on('action-update-tnc-state', (event, arg) => {
         var scatterSize = arg.scatter.length;
     }
 
-     if (global.scatterData != newScatterData && scatterSize > 0) {
-     global.scatterData = newScatterData;
+    if (scatterSize > 0 && global.scatterData != newScatterData) {
+         global.scatterData = newScatterData;
 
         if (typeof(global.scatterChart) == 'undefined') {
-        var scatterCtx = document.getElementById('scatter').getContext('2d');
-        global.scatterChart = new Chart(scatterCtx, {
-            type: 'scatter',
-            data: global.scatterData,
-            options: scatterConfig
-        });
-    } else {
-        global.scatterChart.data = global.scatterData;
-        global.scatterChart.update();
+            var scatterCtx = document.getElementById('scatter').getContext('2d');
+            global.scatterChart = new Chart(scatterCtx, {
+                type: 'scatter',
+                data: global.scatterData,
+                options: scatterConfig
+            });
+        } else {
+            global.scatterChart.data = global.scatterData;
+            global.scatterChart.update();
+        }
     }
-}
     // END OF SCATTER CHART
 
     // START OF SPEED CHART
@@ -1627,7 +1640,7 @@ ipcRenderer.on('action-update-tnc-state', (event, arg) => {
     var speedChartConfig = {
       type: 'line',
     };
-
+    
     var newSpeedData = {
         labels: speedDataTime,
         datasets: [
@@ -1650,31 +1663,10 @@ ipcRenderer.on('action-update-tnc-state', (event, arg) => {
                 yAxisID: 'SPEED',
             }
         ],
-
+    
     };
 
-var speedChartOptions = {
-            responsive: true,
-            animations: true,
-            cubicInterpolationMode: 'monotone',
-            tension: 0.4,
-            scales: {
-              SNR:{
-                type: 'linear',
-                ticks: { beginAtZero: true, color: 'rgb(255, 99, 132)' },
-                position: 'right',
-              },
-              SPEED :{
-                type: 'linear',
-                ticks: { beginAtZero: true, color: 'rgb(120, 100, 120)' },
-                position: 'left',
-                grid: {
-                    drawOnChartArea: false, // only want the grid lines for one axis to show up
-                },
-              },
-              x: { ticks: { beginAtZero: true } },
-            }
-        }
+    
 
     if (typeof(global.speedChart) == 'undefined') {
         var speedCtx = document.getElementById('chart').getContext('2d');
@@ -1898,8 +1890,11 @@ var speedChartOptions = {
         dbfs_level = Math.pow(10, arg.dbfs_level / 20) * 100
         updateElement("text","dbfs_level_value",Math.round(arg.dbfs_level) + ' dBFS')
         //document.getElementById("dbfs_level_value").innerHTML = Math.round(arg.dbfs_level) + ' dBFS'
-        updateElementAttr("dbfs_level","aria-valuenow",dbfs_level);
-        updateElementAttr("dbfs_level","style","width:" + dbfs_level + "%;");
+        //updateElementAttr("dbfs_level","aria-valuenow",dbfs_level);
+        //updateElement("attr","dbfs_level","aria-value",dbfs_level)
+        //updateElementAttr("dbfs_level","style","width:" + dbfs_level + "%;");
+        //updateElement("attr","dbfs_level","style","width:" + dbfs_level + "%;")
+        updateElement("attr","dbfs_level",["style","aria-valuenow"],["width:" + dbfs_level + "%;",dbfs_level])
         //document.getElementById("dbfs_level").setAttribute("aria-valuenow", dbfs_level);
         //document.getElementById("dbfs_level").setAttribute("style", "width:" + dbfs_level + "%;");
     }
@@ -1960,13 +1955,13 @@ var speedChartOptions = {
     
     // SET SPEED LEVEL
     switch (arg.speed_level) {
-        case 0:
+        case "0":
             updateElement("class","speed_level","bi bi-reception-1");
             break;
-        case 1:
+        case "1":
             updateElement("class","speed_level","bi bi-reception-2");
             break;
-        case 3:
+        case "2":
             updateElement("class","speed_level","bi bi-reception-3");
             break;
         default:
@@ -2003,8 +1998,9 @@ var speedChartOptions = {
     }
     updateElement("text","total_bytes",total_bytes);
     //document.getElementById("total_bytes").innerHTML = total_bytes;
-    updateElementAttr("transmission_progress","aria-valuenow",arg.arq_transmission_percent);
-    updateElementAttr("transmission_progress","aria-style","width:" + arg.arq_transmission_percent + "%;");
+    updateElement("attr","transmission_progress",["aria-valuenow","style"],[arg.arq_transmission_percent,"width:" + arg.arq_transmission_percent + "%;"]);
+    //updateElement("attr","transmission_progress","aria-valuenow",arg.arq_transmission_percent);
+    //updateElement("attr","transmission_progress","aria-style","width:" + arg.arq_transmission_percent + "%;");
     //document.getElementById("transmission_progress").setAttribute("aria-valuenow", arg.arq_transmission_percent);
     //document.getElementById("transmission_progress").setAttribute("style", "width:" + arg.arq_transmission_percent + "%;");
 
@@ -2083,6 +2079,17 @@ var speedChartOptions = {
         dataTypeText.innerText = arg.stations[i]['datatype'];
         dataType.appendChild(dataTypeText);
 
+        switch (arg.stations[i]['datatype']){
+            case 'DATA-CHANNEL':
+                dataTypeText.innerText = 'DATA-C';
+                dataType.appendChild(dataTypeText);
+                break;
+            case 'SESSION-HB':
+                dataTypeText.innerHTML = '<i class="bi bi-heart-pulse-fill"></i>';
+                dataType.appendChild(dataTypeText);
+                break;
+        }
+        /*
         if(arg.stations[i]['datatype'] == 'DATA-CHANNEL'){
             dataTypeText.innerText = 'DATA-C';
             dataType.appendChild(dataTypeText);
@@ -2092,30 +2099,43 @@ var speedChartOptions = {
             dataTypeText.innerHTML = '<i class="bi bi-heart-pulse-fill"></i>';
             dataType.appendChild(dataTypeText);
         }
-
-
+        */
+        switch (dataTypeText.innerText) {
+            case 'CQ CQ CQ':
+                row.classList.add("table-success");
+                break;
+            case 'DATA-C':
+                dataTypeText.innerHTML = '<i class="bi bi-file-earmark-binary-fill"></i>';
+                row.classList.add("table-warning");
+                break;
+            case 'BEACON':
+                row.classList.add("table-light");
+                break;
+            case 'PING':
+                row.classList.add("table-info");
+                break;
+            case 'PING-ACK':
+                row.classList.add("table-primary");
+                break;
+        }
+        /*
         if (dataTypeText.innerText == 'CQ CQ CQ') {
             row.classList.add("table-success");
-
         }
-
         if (dataTypeText.innerText == 'DATA-C') {
             dataTypeText.innerHTML = '<i class="bi bi-file-earmark-binary-fill"></i>';
             row.classList.add("table-warning");
         }
-
         if (dataTypeText.innerText == 'BEACON') {
             row.classList.add("table-light");
         }
-
         if (dataTypeText.innerText == 'PING') {
             row.classList.add("table-info");
         }
-
         if (dataTypeText.innerText == 'PING-ACK') {
             row.classList.add("table-primary");
         }
-
+        */
         var snr = document.createElement("td");
         var snrText = document.createElement('span');
         snrText.innerText = arg.stations[i]['snr'];
@@ -2849,28 +2869,35 @@ ipcRenderer.on('action-check-rigctld', (event, data) => {
 });
 
 //Changing stuff is expensive, check if it differs before updating
-function updateElement(type, control,value)
+function updateElement(type, control,value,attrval="")
 {
+    var cntrl = document.getElementById(control);
+    if (cntrl == null){
+        console.log("updateElement:  Unknown element " + control);
+        return;
+    }
     switch (type){
         case "class":
-            if (document.getElementById(control).className != value)
-            document.getElementById(control).className = value;
+            if (cntrl.className != value)
+            cntrl.className = value;
             break;
         case "text":
-            if (document.getElementById(control).textContent != value)
-            document.getElementById(control).textContent = value;
+            if (cntrl.textContent != value)
+            cntrl.textContent = value;
             break;
         case "disable":
-            if (document.getElementById(control).disabled != value)
-            document.getElementById(control).disabled = value;
+            if (cntrl.disabled != value)
+            cntrl.disabled = value;
+            break;
+        case "attr":
+            for (let i=0; i < value.length; i++) {
+                //console.log("setting " + control + " " +  value[i] +"=" + attrval[i])
+                if (cntrl.getAttribute(value[i]) != attrval[i])
+                    cntrl.setAttribute(value[i],attrval[i]);
+            }
             break;
         default:
-            console.log("Got undefined type in updateClass: " + type);
+            console.log("updateElement:  Undefined type: " + type);
             break;
     }
-
-}
-function updateElementAttr(control, attrib, value) {
-    if (document.getElementById(control).getAttribute(attrib) != value)
-        document.getElementById(control).setAttribute(attrib,value);
 }
